@@ -1,14 +1,15 @@
 package main
+
 import (
-"regexp"
-"compress/gzip"
-"os"
-"bufio"
-. "gomiscutils"
-"strings"
-"fmt"
-"flag"
-"strconv"
+	"bufio"
+	"compress/gzip"
+	"flag"
+	"fmt"
+	. "github.com/meow/gomiscutils"
+	"os"
+	"regexp"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -86,7 +87,7 @@ func main() {
 	Die(err)
 	dist *= int64(multiply)
 	Dist = dist
-	os.Stderr.WriteString(fmt.Sprintf("%d",Dist))
+	os.Stderr.WriteString(fmt.Sprintf("%d", Dist))
 
 	var seqgendb SEQGENEDB
 	for i := range seqgendb {
@@ -103,15 +104,15 @@ func main() {
 
 func (db *SEQGENEDB) ReadDBFile(pathOfFile string) {
 	var (
-		f *os.File
-		err error
-		fReader *bufio.Reader
-		gzReader *gzip.Reader
-		contig string
-		chrnum uint32
-		genename string
-		geneid uint32
-		ctgOrient string
+		f                *os.File
+		err              error
+		fReader          *bufio.Reader
+		gzReader         *gzip.Reader
+		contig           string
+		chrnum           uint32
+		genename         string
+		geneid           uint32
+		ctgOrient        string
 		ctgPos1, ctgPos2 uint32
 		//orient uint8
 	)
@@ -178,15 +179,15 @@ func (db *SEQGENEDB) ReadDBFile(pathOfFile string) {
 
 func (db *SEQGENEDB) ReadDBFileForChr7(pathOfFile string) {
 	var (
-		f *os.File
-		err error
-		fReader *bufio.Reader
-		gzReader *gzip.Reader
-		contig string
-		chrnum uint32
-		genename string
-		geneid uint32
-		ctgOrient string
+		f                *os.File
+		err              error
+		fReader          *bufio.Reader
+		gzReader         *gzip.Reader
+		contig           string
+		chrnum           uint32
+		genename         string
+		geneid           uint32
+		ctgOrient        string
 		ctgPos1, ctgPos2 uint32
 		//var orient uint8
 	)
