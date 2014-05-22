@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"flag"
 	"fmt"
-	. "github.com/meow/gomiscutils"
+	. "github.com/meoow/gomiscutils"
 	"os"
 	"regexp"
 	"strconv"
