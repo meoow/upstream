@@ -46,7 +46,7 @@ type (
 var (
 	chr7genes             = make(map[uint32]struct{}, 2000)
 	groupLabelPattern     = regexp.MustCompile(`^GRCh37\.p10`)
-	chrNumPattern         = regexp.MustCompile(`^([1-9][0-9]?|[Xx]|[Yy])$`)
+	chrNumPattern         = regexp.MustCompile(`^([1-9][0-9]?|[Xx]|[Yy])(\|.+)?$`)
 	chr7groupLabelPattern = regexp.MustCompile(`^CRA_TCAGchr7v2`)
 	OrientationSignal     = map[int]string{0: "+", 1: "-"}
 	dbgenefile            string
@@ -55,12 +55,33 @@ var (
 	version               bool
 	extractGene           bool
 	dist_th               string
+	chrDist               bool
 	Dist                  int64
+)
+
+const (
+	field_isGene     = 11
+	field_chrNum     = 1
+	field_groupLabel = 12
+	field_contig     = 5
+	field_orient     = 8
+	field_geneID     = 10
+	field_geneName   = 9
+	field_ctgStart   = 6
+	field_ctgEnd     = 7
+	field_chrStart   = 2
+	field_chrEnd     = 3
+)
+
+var (
+	field_cStart int
+	field_cEnd   int
 )
 
 func init() {
 	flag.StringVar(&dbgenefile, "db", "GENE.GZ", "Database file from dbSNP (gz compressed)")
 	flag.StringVar(&snplist, "rs", "RSLIST.TXT", "One rs info per line listed file.\n        RS  CHR  CONTIG  GENE_POS  CHROME_POS(no use for now)")
+	flag.BoolVar(&chrDist, "c", false, "Use CHR dist instead of GENE dist")
 	flag.BoolVar(&extractGene, "p", false, "Just print gene db")
 	flag.StringVar(&excludedsnplist, "e", "", "A file with excluded SNP list")
 	flag.StringVar(&dist_th, "d", "-1", "Use a constant disance as threashold, may use (k)")
@@ -87,7 +108,15 @@ func main() {
 	Die(err)
 	dist *= int64(multiply)
 	Dist = dist
-	os.Stderr.WriteString(fmt.Sprintf("%d", Dist))
+	//os.Stderr.WriteString(fmt.Sprintf("%d", Dist))
+
+	if chrDist {
+		field_cStart = field_chrStart
+		field_cEnd = field_chrEnd
+	} else {
+		field_cStart = field_ctgStart
+		field_cEnd = field_ctgEnd
+	}
 
 	var seqgendb SEQGENEDB
 	for i := range seqgendb {
@@ -137,13 +166,13 @@ func (db *SEQGENEDB) ReadDBFile(pathOfFile string) {
 
 		//		if len(fields[14]) < 4 || fields[14][0:4] != "best" {
 		//			continue }
-		if fields[11] != "GENE" {
+		if fields[field_isGene] != "GENE" {
 			continue
 		}
-		if !chrNumPattern.MatchString(fields[1]) {
+		if !chrNumPattern.MatchString(fields[field_chrNum]) {
 			continue
 		}
-		if !(groupLabelPattern.MatchString(fields[12])) {
+		if !(groupLabelPattern.MatchString(fields[field_groupLabel])) {
 			continue
 		}
 
@@ -210,18 +239,22 @@ func (db *SEQGENEDB) ReadDBFileForChr7(pathOfFile string) {
 		}
 		fields := strings.Split(line, "\t")
 
-		if fields[1] != "7" {
+		if !chrNumPattern.MatchString(fields[field_chrNum]) {
+			continue
+		}
+
+		if parseChrNum(fields[field_chrNum]) != "7" {
 			continue
 		}
 		//		if len(fields[14]) < 4 || fields[14][0:4] != "best" {
 		//			continue }
-		if fields[11] != "GENE" {
+		if fields[field_isGene] != "GENE" {
 			continue
 		}
-		if !chrNumPattern.MatchString(fields[1]) {
+		if !chrNumPattern.MatchString(fields[field_chrNum]) {
 			continue
 		}
-		if !(chr7groupLabelPattern.MatchString(fields[12])) {
+		if !(chr7groupLabelPattern.MatchString(fields[field_groupLabel])) {
 			continue
 		}
 
@@ -255,7 +288,7 @@ func (db *SEQGENEDB) ReadDBFileForChr7(pathOfFile string) {
 
 func parseDBFieldsInfo(f []string) (contig, orient, gname string, chrnum, ctg1, ctg2, gid uint32) {
 	var chrnum_string string
-	switch f[1] {
+	switch parseChrNum(f[field_chrNum]) {
 	case "x":
 		fallthrough
 	case "X":
@@ -265,16 +298,20 @@ func parseDBFieldsInfo(f []string) (contig, orient, gname string, chrnum, ctg1, 
 	case "Y":
 		chrnum_string = "24"
 	default:
-		chrnum_string = f[1]
+		chrnum_string = parseChrNum(f[field_chrNum])
 	}
-	contig = f[5]
-	orient = f[8]
+	contig = f[field_contig]
+	orient = f[field_orient]
 	chrnum = uint32(MustParseUint(chrnum_string, 10, 32)) - 1
-	ctg1 = uint32(MustParseUint(f[6], 10, 32))
-	ctg2 = uint32(MustParseUint(f[7], 10, 32))
-	gname = f[9]
-	gid = uint32(MustParseUint(f[10][7:], 10, 32))
+	ctg1 = uint32(MustParseUint(f[field_cStart], 10, 32))
+	ctg2 = uint32(MustParseUint(f[field_cEnd], 10, 32))
+	gname = f[field_geneName]
+	gid = uint32(MustParseUint(f[field_geneID][7:], 10, 32))
 	return
+}
+
+func parseChrNum(num string) string {
+	return chrNumPattern.FindStringSubmatch(num)[1]
 }
 
 func (db *SEQGENEDB) PrintDB() {
