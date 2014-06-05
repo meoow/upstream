@@ -44,9 +44,10 @@ type (
 )
 
 var (
-	chr7genes             = make(map[uint32]struct{}, 2000)
-	groupLabelPattern     = regexp.MustCompile(`^GRCh37\.p10`)
-	chrNumPattern         = regexp.MustCompile(`^([1-9][0-9]?|[Xx]|[Yy])(\|.+)?$`)
+	chr7genes         = make(map[uint32]struct{}, 2000)
+	groupLabelPattern = regexp.MustCompile(`^GRCh37\.p10`)
+	//chrNumPattern         = regexp.MustCompile(`^([1-9][0-9]?|[Xx]|[Yy])(\|.+)?$`)
+	chrNumPattern         = regexp.MustCompile(`^([1-9][0-9]?|[Xx]|[Yy])$`)
 	chr7groupLabelPattern = regexp.MustCompile(`^CRA_TCAGchr7v2`)
 	OrientationSignal     = map[int]string{0: "+", 1: "-"}
 	dbgenefile            string
@@ -64,7 +65,8 @@ const (
 	field_chrNum     = 1
 	field_groupLabel = 12
 	field_contig     = 5
-	field_orient     = 8
+	field_orient_ctg = 8
+	field_orient_chr = 4
 	field_geneID     = 10
 	field_geneName   = 9
 	field_ctgStart   = 6
@@ -76,6 +78,7 @@ const (
 var (
 	field_cStart int
 	field_cEnd   int
+	field_orient int
 )
 
 func init() {
@@ -113,9 +116,11 @@ func main() {
 	if chrDist {
 		field_cStart = field_chrStart
 		field_cEnd = field_chrEnd
+		field_orient = field_orient_chr
 	} else {
 		field_cStart = field_ctgStart
 		field_cEnd = field_ctgEnd
+		field_orient = field_orient_ctg
 	}
 
 	var seqgendb SEQGENEDB
